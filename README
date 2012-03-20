@@ -1,0 +1,3 @@
+This is a client-side mobile web app that gives a user the ability to enter an HRT route number and then see a map with the current position of all buses running that route.
+
+Written in Javascript and HTML5.
