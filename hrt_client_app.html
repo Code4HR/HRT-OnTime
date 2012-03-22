@@ -22,6 +22,23 @@
         this.lon = lon;
     }
 
+/***********************
+* jQuery Helper Function
+***********************/
+    (function ($) {
+        $.QueryString = (function (a) {
+            if (a == "") return {};
+            var b = {};
+            for (var i = 0; i < a.length; ++i) {
+                var p = a[i].split('=');
+                if (p.length != 2) continue;
+                b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+            }
+            return b;
+        })(window.location.search.substr(1).split('&'))
+    })(jQuery);
+
+
 /********************
  * Private Functions
  *******************/
@@ -94,8 +111,8 @@
  * Do Work
  *******************/
     var map;
-    function showMap(position) {
-        var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+    function showMap(latitude, longitude) {
+        var latlng = new google.maps.LatLng(latitude, longitude);
         var myOptions = {
             zoom: 15,
             center: latlng,
@@ -126,22 +143,46 @@
         });
     }
     
-    function showBuses() {
-        getBusesOnRoute($("#routeNumber").val(), presentBuses);
+    function showBuses(routeNumber) {
+        getBusesOnRoute(routeNumber, presentBuses);
     }
     
     function error(msg) {
         var errMsg = typeof msg == 'string' ? msg : "Geolocation failed";
         $('#msg').html(errMsg);
     }
-    
-    $(document).ready(function() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showMap, error);
-        } else {
-            error('Geolocation not supported');
+
+    function onGetCurrentPosition(position) {
+        var latitude = position.coords.latitude;
+        var longitude = position.coords.longitude;
+        localStorage.setItem("latitude", latitude);
+        localStorage.setItem("longitude", longitude);
+        showMap(latitude, longitude);
+    }
+
+    $(document).ready(function () {
+        var latitude = localStorage.getItem("latitude");
+        var longitude = localStorage.getItem("longitude");
+
+        if (latitude == undefined || latitude == null || longitude == undefined || longitude == null) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(onGetCurrentPosition, error);
+            } else {
+                error('Geolocation not supported');
+            }
+        }
+        else {
+            showMap(latitude, longitude);
+        }
+
+        var routeNumber = parseInt($.QueryString["routeNumber"]);
+
+        if (routeNumber != undefined && routeNumber != null && !isNaN(routeNumber)) {
+            $("#routeNumber").val(routeNumber);
+            showBuses(routeNumber);
         }
     });
+
 </script>
 </head>
 <body>
@@ -150,10 +191,12 @@
     </div>
 
     <div data-role="content">
-        <label for="routeNumber">Route Number</label>
-        <input id="routeNumber" type="text" value=""/>
+        <form method="get" action="hrt_client_app.html" data-ajax="false">
+            <label for="routeNumber">Route Number</label>
+            <input id="routeNumber" name="routeNumber" type="text" value=""/>
         
-        <a href="" data-role="button" onClick="showBuses();">Find Buses</a>
+            <input type="submit" value="Find Buses" />
+        </form>
     </div>
 
     <div id="msg"></div>
