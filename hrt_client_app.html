@@ -1,102 +1,162 @@
 <html>
 <head>
-<script type="text/javascript" src="jquery.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0-rc.1/jquery.mobile-1.1.0-rc.1.min.css" />
+    <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.1.0-rc.1/jquery.mobile-1.1.0-rc.1.min.js"></script>
+    
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    
 <script type="text/javascript">
     console.log('hello');
 
 /**************
  * Classes
  *************/
-	function Bus(id, route, date, time, lat, lon) {
-		this.id = id;
-		this.route = route;
-		this.date = date;
-		this.time = time;
-		this.lat = lat;
-		this.lon = lon;
-	}
+    function Bus(id, route, date, time, lat, lon) {
+        this.id = id;
+        this.route = route;
+        this.date = date;
+        this.time = time;
+        this.lat = lat;
+        this.lon = lon;
+    }
 
 /********************
  * Private Functions
  *******************/
 
-	// Here's where the magic happens
-	// Notes about the data we are pulling from couch at the time this code was written:
-	// 1. Most of the checkins don't have a route associated with them.
-	// 2. The checkins are not in chronological order.
-	function getBuses(checkins, route) {
-		var buses = [];
-		var busIds = [];
-		
-		// Go through all the checkins and find out which buses are on the route in question
-		console.log('getting bus ids for route ' + route);
-		$.each(checkins, function(i, checkin) {
-			if(checkin.doc.route == route && jQuery.inArray(checkin.doc.vehicle, busIds) == -1) {
-				busIds.push(checkin.doc.vehicle);
-				console.log('Adding bus ' + checkin.doc.vehicle + ' at time ' + checkin.doc.time)
-				buses.push(new Bus(
-									checkin.doc.vehicle,
-									checkin.doc.route,
-									checkin.doc.date,
-									checkin.doc.time,
-									checkin.doc["lat/lon"][0],
-									checkin.doc["lat/lon"][1]));
-			}
-		});
-		
-		// Now that we have a list of the buses on the route, we need to find the most
-		// recent checkin for each bus.
-		console.log('getting most recent checkins for each bus');
-		$.each(checkins, function(i, checkin) {
-			$.each(buses, function(j, bus) {
-				if(bus.id == checkin.doc.vehicle && bus.time < checkin.doc.time)
-				{
-					//console.log('found newer time for bus ' + bus.id)
-					bus.time = checkin.doc.time;
-					bus.lat = checkin.doc["lat/lon"][0];
-					bus.lon = checkin.doc["lat/lon"][1];
-				}
-			});
-		});
-		
-		return buses;
-	}
-	
-	// Grab the data from IrisCouchDB
-	// Currently, we expect the db to have a couple days of static data
-	// and we pull the first 3000 rows
-	function getCheckins(onComplete) {
-		console.log('getting checkins');
-		$.getJSON('http://hrt.iriscouch.com/hrtransit/_all_docs?limit=3000&include_docs=true&callback=?', onComplete);
-	}
-	
+    // Here's where the magic happens
+    // Notes about the data we are pulling from couch at the time this code was written:
+    // 1. Most of the checkins don't have a route associated with them.
+    // 2. The checkins are not in chronological order.
+    function getBuses(checkins, route) {
+        var buses = [];
+        var busIds = [];
+        
+        // Go through all the checkins and find out which buses are on the route in question
+        console.log('getting bus ids for route ' + route);
+        $.each(checkins, function(i, checkin) {
+            if(checkin.doc.route == route && jQuery.inArray(checkin.doc.vehicle, busIds) == -1) {
+                busIds.push(checkin.doc.vehicle);
+                console.log('Adding bus ' + checkin.doc.vehicle + ' at time ' + checkin.doc.time)
+                buses.push(new Bus(
+                                    checkin.doc.vehicle,
+                                    checkin.doc.route,
+                                    checkin.doc.date,
+                                    checkin.doc.time,
+                                    checkin.doc["lat/lon"][0],
+                                    checkin.doc["lat/lon"][1]));
+            }
+        });
+        
+        // Now that we have a list of the buses on the route, we need to find the most
+        // recent checkin for each bus.
+        console.log('getting most recent checkins for each bus');
+        $.each(checkins, function(i, checkin) {
+            $.each(buses, function(j, bus) {
+                if(bus.id == checkin.doc.vehicle && bus.time < checkin.doc.time)
+                {
+                    //console.log('found newer time for bus ' + bus.id)
+                    bus.time = checkin.doc.time;
+                    bus.lat = checkin.doc["lat/lon"][0];
+                    bus.lon = checkin.doc["lat/lon"][1];
+                }
+            });
+        });
+        
+        return buses;
+    }
+    
+    // Grab the data from IrisCouchDB
+    // Currently, we expect the db to have a couple days of static data
+    // and we pull the first 3000 rows
+    function getCheckins(onComplete) {
+        console.log('getting checkins');
+        $.getJSON('http://hrt.iriscouch.com/hrtransit/_all_docs?limit=3000&include_docs=true&callback=?', onComplete);
+    }
+    
 /********************
  * API Functions
  *******************/
-	// Call this function!
-	// Give it a route and a callback
-	// Once it's done, it will use the callback to send an array of Bus objects
-	// representing the most recent location of every bus on that route 
-	function getBusesOnRoute(route, onBusesFound) {
-		getCheckins(function(data) {
-						console.log('got checkins');
-						onBusesFound(getBuses(data.rows, route));
-		  			});
-	}
+    // Call this function!
+    // Give it a route and a callback
+    // Once it's done, it will use the callback to send an array of Bus objects
+    // representing the most recent location of every bus on that route 
+    function getBusesOnRoute(route, onBusesFound) {
+        getCheckins(function(data) {
+                        console.log('got checkins');
+                        onBusesFound(getBuses(data.rows, route));
+                    });
+    }
 
 /********************
- * Example
+ * Do Work
  *******************/
-	function presentBuses(buses) {
-		console.log('PRESNTING!');
-		console.log(buses);
-	}
-	
-	getBusesOnRoute(6, presentBuses);
-	
+    var map;
+    function showMap(position) {
+        var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        var myOptions = {
+            zoom: 15,
+            center: latlng,
+            mapTypeControl: false,
+            navigationControlOptions: {style: google.maps.NavigationControlStyle.SMALL},
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var mapcanvas = $('#mapcanvas');
+        map = new google.maps.Map(mapcanvas[0], myOptions);
+        var marker = new google.maps.Marker({
+            position: latlng, 
+            map: map, 
+            title:"I am here!"
+        });
+    }
+    
+    function presentBuses(buses) {
+        console.log('PRESNTING!');
+        console.log(buses);
+        
+        $.each(buses, function(i, bus) {
+            var latlng = new google.maps.LatLng(bus.lat, bus.lon);
+            var marker = new google.maps.Marker({
+                position: latlng, 
+                map: map, 
+                title:bus.id
+            });
+        });
+    }
+    
+    function showBuses() {
+        getBusesOnRoute($("#routeNumber").val(), presentBuses);
+    }
+    
+    function error(msg) {
+        var errMsg = typeof msg == 'string' ? msg : "Geolocation failed";
+        $('#msg').html(errMsg);
+    }
+    
+    $(document).ready(function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showMap, error);
+        } else {
+            error('Geolocation not supported');
+        }
+    });
 </script>
 </head>
 <body>
-  <!-- we will add our HTML content here -->
+    <div data-role="header">
+        <h3>HRT Buses</h3>
+    </div>
+
+    <div data-role="content">
+        <label for="routeNumber">Route Number</label>
+        <input id="routeNumber" type="text" value=""/>
+        
+        <a href="" data-role="button" onClick="showBuses();">Find Buses</a>
+    </div>
+
+    <div id="msg"></div>
+    <div id="mapcanvas" style="height: 500px; width: 1000px;"></div>
 </body>
 </html>
