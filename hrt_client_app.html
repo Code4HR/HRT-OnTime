@@ -13,10 +13,11 @@
 /**************
  * Classes
  *************/
-    function Bus(id, route, date, time, lat, lon) {
-        this.id = id;
+    function Bus(num, route, direction, adherence, time, lat, lon) {
+        this.num = num;
         this.route = route;
-        this.date = date;
+        this.direction = direction;
+        this.adherence = adherence;
         this.time = time;
         this.lat = lat;
         this.lon = lon;
@@ -27,9 +28,6 @@
  *******************/
 
     // Here's where the magic happens
-    // Notes about the data we are pulling from couch at the time this code was written:
-    // 1. Most of the checkins don't have a route associated with them.
-    // 2. The checkins are not in chronological order.
     function getBuses(checkins, route) {
         var buses = [];
         var busIds = [];
@@ -37,43 +35,27 @@
         // Go through all the checkins and find out which buses are on the route in question
         console.log('getting bus ids for route ' + route);
         $.each(checkins, function(i, checkin) {
-            if(checkin.doc.route == route && jQuery.inArray(checkin.doc.vehicle, busIds) == -1) {
-                busIds.push(checkin.doc.vehicle);
-                console.log('Adding bus ' + checkin.doc.vehicle + ' at time ' + checkin.doc.time)
+            if(checkin.Route == route) {
+                busIds.push(checkin.BusId);
+                console.log('Adding bus ' + checkin.BusId + ' at time ' + checkin.CheckinTime)
                 buses.push(new Bus(
-                                    checkin.doc.vehicle,
-                                    checkin.doc.route,
-                                    checkin.doc.date,
-                                    checkin.doc.time,
-                                    checkin.doc["lat/lon"][0],
-                                    checkin.doc["lat/lon"][1]));
+                                    checkin.BusId,
+                                    checkin.Route,
+                                    checkin.Direction,
+                                    checkin.Adherence,
+                                    checkin.CheckinTime,
+                                    checkin.Lat,
+                                    checkin.Lon));
             }
-        });
-        
-        // Now that we have a list of the buses on the route, we need to find the most
-        // recent checkin for each bus.
-        console.log('getting most recent checkins for each bus');
-        $.each(checkins, function(i, checkin) {
-            $.each(buses, function(j, bus) {
-                if(bus.id == checkin.doc.vehicle && bus.time < checkin.doc.time)
-                {
-                    //console.log('found newer time for bus ' + bus.id)
-                    bus.time = checkin.doc.time;
-                    bus.lat = checkin.doc["lat/lon"][0];
-                    bus.lon = checkin.doc["lat/lon"][1];
-                }
-            });
         });
         
         return buses;
     }
     
-    // Grab the data from IrisCouchDB
-    // Currently, we expect the db to have a couple days of static data
-    // and we pull the first 3000 rows
+    // Grab the data from our file
     function getCheckins(onComplete) {
         console.log('getting checkins');
-        $.getJSON('http://hrt.iriscouch.com/hrtransit/_all_docs?limit=3000&include_docs=true&callback=?', onComplete);
+        $.getJSON('http://dl.dropbox.com/u/126246/hrt_bus_data.json', onComplete);
     }
     
 /********************
@@ -86,7 +68,7 @@
     function getBusesOnRoute(route, onBusesFound) {
         getCheckins(function(data) {
                         console.log('got checkins');
-                        onBusesFound(getBuses(data.rows, route));
+                        onBusesFound(getBuses(data, route));
                     });
     }
 
@@ -97,7 +79,7 @@
     function showMap(position) {
         var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
         var myOptions = {
-            zoom: 15,
+            zoom: 11,
             center: latlng,
             mapTypeControl: false,
             navigationControlOptions: {style: google.maps.NavigationControlStyle.SMALL},
@@ -121,7 +103,24 @@
             var marker = new google.maps.Marker({
                 position: latlng, 
                 map: map, 
-                title:bus.id
+                animation: google.maps.Animation.DROP,
+                title:'Bus ' + bus.num + ' is ' + bus.adherence + ' min late',
+                icon: 'http://dl.dropbox.com/u/126246/bus.png'
+            });
+            
+            var contentString = 'Bus #' + bus.num + ' traveling ';
+            if(bus.direction == 1) contentString += 'Outbound is ';
+            else contentString += 'Inbound is ';
+            if(bus.adherence == 0) contentString += 'On Time.';
+            else if(bus.adherence > 0) contentString += bus.adherence + ' minutes Early.';
+            else contentString += (bus.adherence*-1) + ' minutes Late.';
+            contentString += '<br>Last Checkin at ' + bus.time;
+            
+            var infowindow = new google.maps.InfoWindow({
+                    content: contentString
+                });
+            google.maps.event.addListener(marker, 'click', function() {
+                infowindow.open(map,marker);
             });
         });
     }
@@ -157,6 +156,6 @@
     </div>
 
     <div id="msg"></div>
-    <div id="mapcanvas" style="height: 500px; width: 1000px;"></div>
+    <div id="mapcanvas" style="height: 400px; width: 100%;"></div>
 </body>
 </html>
