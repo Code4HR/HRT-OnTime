@@ -1,12 +1,12 @@
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0-rc.1/jquery.mobile-1.1.0-rc.1.min.css" />
     <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
     <script src="http://code.jquery.com/mobile/1.1.0-rc.1/jquery.mobile-1.1.0-rc.1.min.js"></script>
-    
+
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
-    
+
 <script type="text/javascript">
     console.log('hello');
 
@@ -50,7 +50,7 @@
     function getBuses(checkins, route) {
         var buses = [];
         var busIds = [];
-        
+
         // Go through all the checkins and find out which buses are on the route in question
         console.log('getting bus ids for route ' + route);
         $.each(checkins, function(i, checkin) {
@@ -66,7 +66,7 @@
                                     checkin.doc["lat/lon"][1]));
             }
         });
-        
+
         // Now that we have a list of the buses on the route, we need to find the most
         // recent checkin for each bus.
         console.log('getting most recent checkins for each bus');
@@ -81,10 +81,10 @@
                 }
             });
         });
-        
+
         return buses;
     }
-    
+
     // Grab the data from IrisCouchDB
     // Currently, we expect the db to have a couple days of static data
     // and we pull the first 3000 rows
@@ -92,14 +92,14 @@
         console.log('getting checkins');
         $.getJSON('http://hrt.iriscouch.com/hrtransit/_all_docs?limit=3000&include_docs=true&callback=?', onComplete);
     }
-    
+
 /********************
  * API Functions
  *******************/
     // Call this function!
     // Give it a route and a callback
     // Once it's done, it will use the callback to send an array of Bus objects
-    // representing the most recent location of every bus on that route 
+    // representing the most recent location of every bus on that route
     function getBusesOnRoute(route, onBusesFound) {
         getCheckins(function(data) {
                         console.log('got checkins');
@@ -123,30 +123,30 @@
         var mapcanvas = $('#mapcanvas');
         map = new google.maps.Map(mapcanvas[0], myOptions);
         var marker = new google.maps.Marker({
-            position: latlng, 
-            map: map, 
+            position: latlng,
+            map: map,
             title:"I am here!"
         });
     }
-    
+
     function presentBuses(buses) {
         console.log('PRESNTING!');
         console.log(buses);
-        
+
         $.each(buses, function(i, bus) {
             var latlng = new google.maps.LatLng(bus.lat, bus.lon);
             var marker = new google.maps.Marker({
-                position: latlng, 
-                map: map, 
+                position: latlng,
+                map: map,
                 title:bus.id
             });
         });
     }
-    
+
     function showBuses(routeNumber) {
         getBusesOnRoute(routeNumber, presentBuses);
     }
-    
+
     function error(msg) {
         var errMsg = typeof msg == 'string' ? msg : "Geolocation failed";
         $('#msg').html(errMsg);
@@ -194,12 +194,13 @@
         <form method="get" action="hrt_client_app.html" data-ajax="false">
             <label for="routeNumber">Route Number</label>
             <input id="routeNumber" name="routeNumber" type="text" value=""/>
-        
+
             <input type="submit" value="Find Buses" />
         </form>
     </div>
 
     <div id="msg"></div>
     <div id="mapcanvas" style="height: 500px; width: 1000px;"></div>
+    <a href="http://gohrt.com/route/">HRT Routes</a>
 </body>
 </html>
