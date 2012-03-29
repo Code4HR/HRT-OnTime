@@ -23,7 +23,7 @@
                 });
 
                 $(routeNumbers).each(function (index) {
-                    list.append("<li><a href='hrt_client_app.html?routeNumber=" + this + "' data-ajax='false'>" + this + "</a></li>");
+                    list.append("<li><a href='hrt_client_app.html?routeNumber=" + this + "' data-ajax='false'>Route " + this + "</a></li>");
                 });
 
                 $(list).listview("refresh");
