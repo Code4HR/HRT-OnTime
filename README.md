@@ -24,3 +24,9 @@ Finally, the program pulls all the checkins from the last hour and creates a jso
 The mobile app was modified to handle the data from this temporary backend processing.
 Since more processing is done on the backend and there are not multiple objects for any bus id, the app only has to iterate through the data once and find each object with the desired route number.
 Finally, the app uses the Google Maps javascript API to map the location of each bus, along with the user's location.
+
+### Running The Server
+Install MongoDB and the MongoDB C# driver.
+Open TempServerProcess/HRT.sln in Visual Studio.
+Open DatabaseConnector.cs and look at the CheckinsToJson method. Near the end of the function is a hardcoded file location for where program output goes. Change this to be applicable to your machine.
+Build and run the program.
