@@ -26,7 +26,7 @@ Since more processing is done on the backend and there are not multiple objects 
 Finally, the app uses the Google Maps javascript API to map the location of each bus, along with the user's location.
 
 ### Running The Server
-Install MongoDB and the MongoDB C# driver.
-Open TempServerProcess/HRT.sln in Visual Studio.
-Open DatabaseConnector.cs and look at the CheckinsToJson method. Near the end of the function is a hardcoded file location for where program output goes. Change this to be applicable to your machine.
-Build and run the program.
+* Install MongoDB and the MongoDB C# driver.
+* Open TempServerProcess/HRT.sln in Visual Studio.
+* Open DatabaseConnector.cs and look at the CheckinsToJson method. Near the end of the function is a hardcoded file location for where program output goes. Change this to be applicable to your machine.
+* Build and run the program.
